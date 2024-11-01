@@ -18,7 +18,7 @@ for ui_file in *.ui; do
   fi
 done
 
-
+#https://stackoverflow.com/a/66104738/8124158
 if [[ -f "resources.qrc" ]]; then
     if rcc -g python resources.qrc | sed '0,/PySide2/s//PyQt6/' > ../resources.py; then
         echo "Compiled resources.qrc successfully."
@@ -27,5 +27,5 @@ if [[ -f "resources.qrc" ]]; then
         # exit 1
     fi
 else
-    echo "No resources file (resources.qrc) found in directory $current_dir"  # Message for missing resource file
+    echo "No resources file (resources.qrc) found in directory $current_dir"
 fi

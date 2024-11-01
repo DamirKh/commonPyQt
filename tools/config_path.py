@@ -13,8 +13,10 @@ except ImportError:
     app_name = "Unknown_app"
 
 
-def get_user_data_path():
-    """Returns the user's data directory in an OS-independent way."""
+def get_user_data_path() -> pathlib.Path:
+    """Returns the user's data directory in an OS-independent way.
+    :rtype: pathlib.Path
+    """
 
     home_dir = pathlib.Path.home()
     app_data_dir = home_dir / "AppData" if os.name == "nt" else home_dir / ".config"

@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+from pathlib import Path
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -43,7 +44,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.actionShow_log.triggered.connect(self.show_log)
 
     def open_folder(self):
-        directory_path = get_user_data_path()
+        directory_path: Path = get_user_data_path()
         # print(f"Opening folder {directory_path}")
         if sys.platform == "win32":
             os.startfile(directory_path)
