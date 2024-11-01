@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/folder-horizontal-open.png</file>
+    <file>icons/arrow-branch-270-left.png</file>
+    <file>icons/plus.png</file>
+    <file>icons/leaf--plus.png</file>
+  </qresource>
+</RCC>
