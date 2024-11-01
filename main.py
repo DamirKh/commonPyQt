@@ -40,10 +40,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.actionSave.triggered.connect(self.save_config)
         # self.actionRead_Timer.triggered.connect(self.on_read_timer_conf)
         # self.actionEnable_writing_to_PLC.triggered.connect(self.on_write_enable)
-        self.actionOpen_project_directory.triggered.connect(self.open_folder)
+        self.actionOpen_settings_directory.triggered.connect(self.open_settings_folder)
+        self.actionOpen_project.triggered.connect(self.open_project)
         # self.actionShow_log.triggered.connect(self.show_log)
 
-    def open_folder(self):
+    def open_project(self):
+        pass
+
+
+    def open_settings_folder(self):
         directory_path: Path = get_user_data_path()
         # print(f"Opening folder {directory_path}")
         if sys.platform == "win32":

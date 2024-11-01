@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1050</width>
-    <height>843</height>
+    <width>714</width>
+    <height>444</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -54,7 +54,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1050</width>
+     <width>714</width>
      <height>19</height>
     </rect>
    </property>
@@ -62,7 +62,8 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen_project_directory"/>
+    <addaction name="actionOpen_settings_directory"/>
+    <addaction name="actionOpen_project"/>
    </widget>
    <widget class="QMenu" name="menuTree">
     <property name="title">
@@ -117,13 +118,21 @@
     <string>Add System</string>
    </property>
   </action>
-  <action name="actionOpen_project_directory">
+  <action name="actionOpen_settings_directory">
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/icons/icons/folder-horizontal-open.png</normaloff>:/icons/icons/folder-horizontal-open.png</iconset>
    </property>
    <property name="text">
-    <string>Open project directory</string>
+    <string>Open app settings directory</string>
+   </property>
+   <property name="toolTip">
+    <string>Open setings directory</string>
+   </property>
+  </action>
+  <action name="actionOpen_project">
+   <property name="text">
+    <string>Open project...</string>
    </property>
   </action>
  </widget>

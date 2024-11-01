@@ -18,14 +18,25 @@ for ui_file in *.ui; do
   fi
 done
 
-#https://stackoverflow.com/a/66104738/8124158
 if [[ -f "resources.qrc" ]]; then
-    if rcc -g python resources.qrc | sed '0,/PySide2/s//PyQt6/' > ../resources.py; then
-        echo "Compiled resources.qrc successfully."
+    TEMP_RCC_OUTPUT=$(mktemp)  # Create a temporary file
+
+    if rcc -g python resources.qrc > "$TEMP_RCC_OUTPUT" 2>&1; then # Redirect both stdout and stderr to the temp file
+        # rcc succeeded, now replace PySide2 with PyQt6
+        sed '0,/PySide2/s//PyQt6/' "$TEMP_RCC_OUTPUT" > ../resources.py
+        echo "Compiled resources.qrc successfully using Qt6 rcc."
+        rm "$TEMP_RCC_OUTPUT"  # Remove the temporary file
+    elif pyrcc5 resources.qrc -o "$TEMP_RCC_OUTPUT"; then
+        sed 's/PyQt5/PyQt6/g' "$TEMP_RCC_OUTPUT" > ../resources.py
+        rm "$TEMP_RCC_OUTPUT"  # Remove the temporary file
+        echo "Compiled resources.qrc successfully using pyrcc5."
     else
-        echo "Failed to compile resources.qrc" >&2
-        # exit 1
+        # rcc failed, print the error message
+        cat "$TEMP_RCC_OUTPUT" >&2
+        rm "$TEMP_RCC_OUTPUT"
+        echo "Failed to compile resources.qrc (Qt6 rcc failed, pyrcc5 failed)." >&2
+        exit 1
     fi
 else
-    echo "No resources file (resources.qrc) found in directory $current_dir"
+    echo "No resources file (resources.qrc) found in directory $(pwd)" >&2
 fi
