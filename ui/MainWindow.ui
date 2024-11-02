@@ -10,9 +10,6 @@
     <height>444</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Logix Invent</string>
-  </property>
   <property name="windowIcon">
    <iconset>
     <normaloff>:/icons/irt.ico</normaloff>:/icons/irt.ico</iconset>
@@ -27,23 +24,7 @@
       <property name="handleWidth">
        <number>5</number>
       </property>
-      <widget class="QTreeWidget" name="treeWidget">
-       <column>
-        <property name="text">
-         <string>System</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Property</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Value</string>
-        </property>
-       </column>
-      </widget>
+      <widget class="QTreeView" name="treeView"/>
       <widget class="QTextEdit" name="textEdit"/>
      </widget>
     </item>
@@ -62,8 +43,10 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen_settings_directory"/>
-    <addaction name="actionOpen_project"/>
+    <addaction name="actionOpen_book"/>
+    <addaction name="actionClose_book"/>
+    <addaction name="separator"/>
+    <addaction name="actionNew_book"/>
    </widget>
    <widget class="QMenu" name="menuTree">
     <property name="title">
@@ -73,8 +56,18 @@
     <addaction name="actionNew_Subitem"/>
     <addaction name="actionAdd_System"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+    <addaction name="actionAbout_Qt"/>
+    <addaction name="separator"/>
+    <addaction name="actionOpen_settings_directory"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTree"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -130,9 +123,48 @@
     <string>Open setings directory</string>
    </property>
   </action>
-  <action name="actionOpen_project">
+  <action name="actionOpen_book">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/book-open.png</normaloff>:/icons/icons/book-open.png</iconset>
+   </property>
    <property name="text">
-    <string>Open project...</string>
+    <string>Open book...</string>
+   </property>
+  </action>
+  <action name="actionClose_book">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/book--pencil.png</normaloff>:/icons/icons/book--pencil.png</iconset>
+   </property>
+   <property name="text">
+    <string>Close book</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/information.png</normaloff>:/icons/icons/information.png</iconset>
+   </property>
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionAbout_Qt">
+   <property name="icon">
+    <iconset theme="help-about"/>
+   </property>
+   <property name="text">
+    <string>About Qt</string>
+   </property>
+  </action>
+  <action name="actionNew_book">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/book--plus.png</normaloff>:/icons/icons/book--plus.png</iconset>
+   </property>
+   <property name="text">
+    <string>New book...</string>
    </property>
   </action>
  </widget>

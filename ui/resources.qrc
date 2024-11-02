@@ -1,5 +1,9 @@
 <RCC>
   <qresource prefix="icons">
+    <file>icons/information.png</file>
+    <file>icons/book--plus.png</file>
+    <file>icons/book--pencil.png</file>
+    <file>icons/book-open.png</file>
     <file>icons/folder-horizontal-open.png</file>
     <file>icons/arrow-branch-270-left.png</file>
     <file>icons/plus.png</file>
