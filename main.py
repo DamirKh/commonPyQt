@@ -31,7 +31,7 @@ from PyQt6.QtGui import QFileSystemModel
 from tools import get_user_data_path
 from ui.MainWindow import Ui_MainWindow
 import resources
-from book_module.book import TheBook
+from book_module.book import TheBook, book_file_name
 from book_module.book_model import BookModel
 import version
 # import PySide6
@@ -54,11 +54,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionAbout.triggered.connect(self.about)
         self.actionAbout_Qt.triggered.connect(self.about_pyqt)
 
+        self.actionAdd_Node.triggered.connect(self.add_node)
+
     def setup_book_browser(self):  # New method to set up the file browser
         self.book_model = BookModel()
         self.book_model.setRootPath(self.book.path)
 
         self.treeView.setModel(self.book_model)
+        self.actionAdd_Item.setEnabled(True)
+        self.actionNew_Subitem.setEnabled(True)
+        self.actionAdd_Node.setEnabled(True)
         # self.treeView.setRootIndex(self.book.path)
 
     def new_book(self):
@@ -73,11 +78,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if dialog.exec():  # Use exec() instead of exec_() in PyQt6
             folder_path = dialog.selectedFiles()[0]  # Get the selected path
             self.log.debug(f"Selected folder: {folder_path}")
-            self.book = TheBook(Path(folder_path))
-            self.book.save()
-            pass
-            # Now you can process the selected folder path
-            # ... (e.g., load book_module data, etc.) ...
+
+            book_path = Path(folder_path)
+            self.book = TheBook(path=book_path)
+            self.book.save()  # Correct saving
+            self.setup_book_browser()
+
         else:
             self.log.debug("New book canceled.")
 
@@ -85,7 +91,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.log.debug(f"Hit 'Open book'")
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
-        dialog.setNameFilter("Book Data (book_data.pickle)")  # Filter for the exact filename
+        dialog.setNameFilter(f"Book Data ({book_file_name})")  # Filter for the exact filename
 
         default_book_dir = get_user_data_path() / "Books"
         if default_book_dir.exists():
@@ -96,12 +102,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if selected_file:
                 try:
                     book_path = Path(selected_file).parent
-                    if (book_path / "book_data.pickle").exists():  # redundant check
-                        self.book = TheBook(book_path)
-                        self.log.debug(f"Opened book: {self.book.name}")
+                    if (book_path / book_file_name).exists():  # redundant check
+                        self.book = TheBook.load(book_path)
+                        self.book.path = book_path
+                        self.log.debug(f"Opened book: {self.book}")
                         self.setup_book_browser()
                     else:
-                        raise FileNotFoundError("book_data.pickle not found")  # Raise exception to trigger except block
+                        raise FileNotFoundError(f"{book_file_name} not found")  # Raise exception to trigger except block
 
                 except (TypeError, pickle.UnpicklingError, AttributeError, FileNotFoundError) as e:
                     self.log.error(f"Error loading book: {e}")
@@ -111,6 +118,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         else:
             self.log.debug("Open book canceled.")
+
+    def add_node(self):
+        self.log.debug(f"Hit 'Add Node'")
+        # self.book_model.
+
 
 
     def open_settings_folder(self):

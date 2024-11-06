@@ -4,7 +4,8 @@ from pathlib import Path
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtCore import QSize, Qt, QThreadPool, pyqtSignal, QModelIndex, QDir
 
-from .chapter import Chapter
+from .node import Node
+from .book import TheBook
 
 class BookModel(QStandardItemModel):
     log = logging.getLogger('BookModel')
@@ -16,6 +17,8 @@ class BookModel(QStandardItemModel):
 
 
     def setRootPath(self, path: Path):
+        if not isinstance(path, Path):
+            path = Path(path)
         if not path.exists() or not path.is_dir():
             self.log.error(f"Invalid path: '{str(path)}' - must be an existing directory.")
             return  # Or raise an exception
@@ -46,7 +49,7 @@ class BookModel(QStandardItemModel):
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
 
                 if entry.isDir():
-                    book = Chapter.load_from_directory(path / item_name)  # Try to load
+                    book = TheBook.load(path / item_name)  # Try to load
 
                     if book:  # Check if it's a Book directory
                         item.setData("Book", Qt.ItemDataRole.ToolTipRole)

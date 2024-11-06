@@ -54,7 +54,7 @@
     </property>
     <addaction name="actionAdd_Item"/>
     <addaction name="actionNew_Subitem"/>
-    <addaction name="actionAdd_System"/>
+    <addaction name="actionAdd_Node"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -82,9 +82,12 @@
    </attribute>
    <addaction name="actionAdd_Item"/>
    <addaction name="actionNew_Subitem"/>
-   <addaction name="actionAdd_System"/>
+   <addaction name="actionAdd_Node"/>
   </widget>
   <action name="actionAdd_Item">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/icons/icons/plus.png</normaloff>:/icons/icons/plus.png</iconset>
@@ -94,6 +97,9 @@
    </property>
   </action>
   <action name="actionNew_Subitem">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/icons/icons/arrow-branch-270-left.png</normaloff>:/icons/icons/arrow-branch-270-left.png</iconset>
@@ -102,13 +108,19 @@
     <string>New Subitem</string>
    </property>
   </action>
-  <action name="actionAdd_System">
+  <action name="actionAdd_Node">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/icons/icons/leaf--plus.png</normaloff>:/icons/icons/leaf--plus.png</iconset>
    </property>
    <property name="text">
-    <string>Add System</string>
+    <string>Add Node</string>
+   </property>
+   <property name="toolTip">
+    <string>Add Node</string>
    </property>
   </action>
   <action name="actionOpen_settings_directory">
