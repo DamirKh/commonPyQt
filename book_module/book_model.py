@@ -11,7 +11,7 @@ class BookModel(QStandardItemModel):
     log = logging.getLogger('BookModel')
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setHorizontalHeaderLabels(["Name", "Description"])
+        self.setHorizontalHeaderLabels(["Key", "Value"])
         # self.test_populate_model()
         self._root = None  # Initialize _root
 
@@ -34,7 +34,6 @@ class BookModel(QStandardItemModel):
             return
 
         self.clear()  # Clear existing items
-        self.setHorizontalHeaderLabels(["Name", "Type", "Size"])  # More informative headers
 
         self._populate_from_path(self.invisibleRootItem(), self._root)
 

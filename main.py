@@ -123,8 +123,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.log.debug(f"Hit 'Add Node'")
         # self.book_model.
 
-
-
     def open_settings_folder(self):
         directory_path: Path = get_user_data_path()
         # print(f"Opening folder {directory_path}")
