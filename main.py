@@ -1,5 +1,4 @@
 import os
-import pickle
 import sys
 import subprocess
 from pathlib import Path
@@ -24,9 +23,6 @@ from PyQt6.QtWidgets import (
     QMainWindow,
 )
 
-from PyQt6.QtGui import QFileSystemModel
-# from PyQt6.QtGui import QIcon
-# from PyQt6.QtCore import QSize, Qt, QThreadPool
 
 from tools import get_user_data_path
 from ui.MainWindow import Ui_MainWindow
@@ -109,13 +105,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.setup_book_browser()
                     else:
                         raise FileNotFoundError(f"{book_file_name} not found")  # Raise exception to trigger except block
-
-                except (TypeError, pickle.UnpicklingError, AttributeError, FileNotFoundError) as e:
+                except (TypeError, AttributeError, FileNotFoundError) as e:
                     self.log.error(f"Error loading book: {e}")
                     QMessageBox.critical(self, "Error", f"Could not load book: {e}")
             else:
                 self.log.debug("No book file selected.")
-
         else:
             self.log.debug("Open book canceled.")
 
