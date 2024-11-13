@@ -16,6 +16,7 @@ class TreeNode(ABC):
     _node_registry = {}  # class registry - class variable
 
     directory: Optional[Path] = field(default=None, repr=False, compare=False)
+    required_children: Dict[str, str] = field(default_factory=dict)  # Moved here
 
     @classmethod
     def register_node_type(cls, node_type):  # decorator to register subclasses
@@ -53,7 +54,7 @@ class TreeNode(ABC):
         }
 
         for f in fields(self):
-            if f.name not in ('directory'):
+            if f.name not in ('directory',):
                 # Handle potential JSON serialization issues (e.g., for custom objects):
                 value = getattr(self, f.name)
                 try:
@@ -116,47 +117,17 @@ class TreeNode(ABC):
                 shutil.rmtree(child_dir)  # remove directory
             else:
                 raise FileNotFoundError  # Raise error if child's directory doesn't exist
-
-    @abstractmethod
-    def node_type(self) -> str:  # Type hint for return type
-        pass
-
-    @property
-    @abstractmethod
-    def valid(self) -> bool:
-        pass
-
-    def __str__(self) -> str:
-        return f"{self.node_type()} Node"
-
-
-@TreeNode.register_node_type('BaseIntNode')
-@dataclass(kw_only=True)
-class BaseIntNode(TreeNode):
-    value: int  # Or any other data type you need
-
     def node_type(self) -> str:
-        return "BaseIntNode"
-
-    @property
-    def valid(self) -> bool:  # Example validation
-        return isinstance(self.value, int)
-
-    def __str__(self) -> str:
-        return f"Base Integer Node: {self.value}"
-
-
-@TreeNode.register_node_type('NodeWithChildren')
-@dataclass(kw_only=True)
-class NodeWithChildren(TreeNode):
-    required_children: Dict[str, str] = field(
-        default_factory=lambda: {"child1": "BaseIntNode"})  # required child type and name
-
-    def node_type(self) -> str:
-        return 'NodeWithChildren'
+        return type(self).__name__
 
     @property
     def valid(self) -> bool:
+        """
+        Checks if the node is valid, including required children checks.
+        Subclasses can override this method to add their own validation logic.
+        Make sure to call `super().valid()` in subclasses to include
+        the required children validation.
+        """
         if not self.directory:
             return False
 
@@ -165,6 +136,38 @@ class NodeWithChildren(TreeNode):
             if not child or child.node_type() != child_type:  # Check both name and type
                 return False
         return True
+
+    def __str__(self) -> str:
+        return f"{self.node_type()} Node"
+
+
+@TreeNode.register_node_type('BaseIntNode')
+@dataclass(kw_only=True)
+class BaseIntNode(TreeNode):
+    """This class is mainly for run tests"""
+    value: int  # Or any other data type you need
+
+    @property
+    def valid(self) -> bool:
+        is_value_valid = isinstance(self.value, int)  # Perform BaseIntNode-specific check
+
+        # Call super().valid() AFTER your specific checks. This way you can return False early.
+        return is_value_valid and super().valid  # call general valid method
+
+    def __str__(self) -> str:
+        return f"Base Integer Node: {self.value}"
+
+
+@TreeNode.register_node_type('NodeWithChildren')
+@dataclass(kw_only=True)
+class NodeWithChildren(TreeNode):
+    """This class is mainly for run tests"""
+    required_children: Dict[str, str] = field(
+        default_factory=lambda: {"child1": "BaseIntNode"})  # required child type and name
+
+    @property
+    def valid(self) -> bool:
+        return super().valid  # just call TreeNode general validation
 
 
 class TestTreeNode(unittest.TestCase):
@@ -194,24 +197,18 @@ class TestTreeNode(unittest.TestCase):
 
         self.assertFalse(parent.valid)  # Invalid (no children)
 
-
         child1 = BaseIntNode(value=1)
         parent.add_child(child1, "child1")  # Add correct child with correct name
 
-        loaded_parent = TreeNode.load_from_directory(parent_dir) #reload parent to refresh children
+        loaded_parent = TreeNode.load_from_directory(parent_dir)  # reload parent to refresh children
         self.assertTrue(loaded_parent.valid)  # Valid (correct child with correct name)
-
-
-
 
         # Test with wrong child name *in addition to* correct child
         child2 = BaseIntNode(value=2)
         parent.add_child(child2, "wrong_name")  # Correct type but wrong name
-        loaded_parent = TreeNode.load_from_directory(parent_dir) #reload parent to refresh children
+        loaded_parent = TreeNode.load_from_directory(parent_dir)  # reload parent to refresh children
 
         self.assertTrue(loaded_parent.valid)  # Still valid (required child is present)
-
-
 
         child3 = NodeWithChildren(directory="child3")  # Incorrect type
         parent.add_child(child3, "child1")  # Correct name, wrong type
@@ -219,9 +216,7 @@ class TestTreeNode(unittest.TestCase):
         loaded_parent = TreeNode.load_from_directory(parent_dir)  # reload to refresh children
         self.assertFalse(loaded_parent.valid)  # Invalid (wrong type)
 
-
-
-        parent.remove_child("child1") # remove using new method
+        parent.remove_child("child1")  # remove using new method
 
         loaded_parent = TreeNode.load_from_directory(parent_dir)  # reload to refresh children
 
@@ -315,8 +310,8 @@ class TestTreeNode(unittest.TestCase):
             node.save_to_directory()  # directory not specified
 
     def test_to_dict(self):
-        node = BaseIntNode(value=15, directory=self.temp_dir / "node_to_dict")
-        expected_dict = {"node_type": "BaseIntNode", "value": 15}
+        node = BaseIntNode(value=15, directory=self.temp_dir / "node_to_dict", required_children={})
+        expected_dict = {"node_type": "BaseIntNode", "required_children": {}, "value": 15}  # include required_children
         self.assertEqual(node.to_dict(), expected_dict)
 
 

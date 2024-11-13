@@ -4,7 +4,6 @@ from pathlib import Path
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtCore import QSize, Qt, QThreadPool, pyqtSignal, QModelIndex, QDir
 
-from .node import Node
 from .book import TheBook
 
 class BookModel(QStandardItemModel):
@@ -68,20 +67,3 @@ class BookModel(QStandardItemModel):
                     self.log.debug(f"add item '{entry.fileName()}'")
 
                 parent_item.appendRow(item)
-
-    # def _populate_from_path(self, parent_item, path: Path):
-    #     self.log.debug(f"Add subdir '{str(path)}'")
-    #     for entry in QDir(str(path)).entryInfoList(
-    #             QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot):  # Use QDir for better handling of hidden files and system entries
-    #         item = QStandardItem(entry.fileName())
-    #         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
-    #
-    #         if entry.isDir():
-    #             item.setData("Directory", Qt.ItemDataRole.ToolTipRole)
-    #             self._populate_from_path(item, path / entry.fileName())  # Recursively populate subdirectories
-    #         else:
-    #             item.setData("File", Qt.ItemDataRole.ToolTipRole)
-    #             # item.setData(entry.size(), Qt.ItemDataRole.SizeHintRole)
-    #             self.log.debug(f"add item '{entry.fileName()}'")
-    #
-    #         parent_item.appendRow(item)
