@@ -1,32 +1,29 @@
 import logging
-log = logging.getLogger("book")
+from typing import Optional
+
+log = logging.getLogger("TheBook")
 
 from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import datetime
-from . import node
+from .node import TreeNode
 
-book_file_name = "TheBook.json"
 
+@TreeNode.register_node_type('TheBook')
 @dataclass(kw_only=True)
-class TheBook(node.Node):
-    path: Path
-    type: str = 'TheBook'
-    store_file: str = book_file_name
-    node_files = list()
+class TheBook(TreeNode):
+    """This class represents the book (Entire project)"""
+    Title: str = "Untitled"
+    BackCover: str = "User can write any comments here"
+    _created: datetime = field(default_factory=datetime.now)
+    _last_save: datetime = field(default_factory=datetime.now)
 
-    def save(self):  # Override save to use self.path
-        super().save(self.path)
+    def save_to_directory(self, directory: Optional[str] = None):
+        self._last_save = datetime.now()
+        super().save_to_directory(directory=directory)
+        log.info(f"Saved TheBook '{self.Title}' to {self.directory}")  # Log the save event
 
-    def register_node_type(self, node_type):
-        if issubclass(node_type, node.Node):
-            log.info(f"Register node type {str(node_type)}...")
-            self.node_files.append(node_type.store_file)
-        else:
-            log.error(f"Type {str(node_type)} can't be registered")
-
-
-    @classmethod
-    def load(cls, path: Path):  # Override load method
-        filepath = path / book_file_name  # Pass filename as string
-        return super().load(filepath)  # Use the overridden load method
+    def __str__(self) -> str:
+        created_str = self._created.strftime("%Y-%m-%d %H:%M:%S")  # Or your preferred format
+        last_save_str = self._last_save.strftime("%Y-%m-%d %H:%M:%S")
+        return f"The Book: {self.Title} (created {created_str}, saved: {last_save_str})"

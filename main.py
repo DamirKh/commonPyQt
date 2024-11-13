@@ -27,8 +27,9 @@ from PyQt6.QtWidgets import (
 from tools import get_user_data_path
 from ui.MainWindow import Ui_MainWindow
 import resources
-from book_module.book import TheBook, book_file_name
+from book_module.book import TheBook
 from book_module.book_model import BookModel
+from book_module.node import DATA_JSON as book_file_name
 import version
 # import PySide6
 
@@ -54,7 +55,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setup_book_browser(self):  # New method to set up the file browser
         self.book_model = BookModel()
-        self.book_model.setRootPath(self.book.path)
+        self.book_model.setRootPath(self.book.directory)
 
         self.treeView.setModel(self.book_model)
         self.actionAdd_Item.setEnabled(True)
@@ -76,8 +77,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.log.debug(f"Selected folder: {folder_path}")
 
             book_path = Path(folder_path)
-            self.book = TheBook(path=book_path)
-            self.book.save()  # Correct saving
+            self.book = TheBook(directory=book_path)
+            self.book.save_to_directory()  # Correct saving
             self.setup_book_browser()
 
         else:
@@ -98,13 +99,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if selected_file:
                 try:
                     book_path = Path(selected_file).parent
-                    if (book_path / book_file_name).exists():  # redundant check
-                        self.book = TheBook.load(book_path)
-                        self.book.path = book_path
-                        self.log.debug(f"Opened book: {self.book}")
-                        self.setup_book_browser()
-                    else:
-                        raise FileNotFoundError(f"{book_file_name} not found")  # Raise exception to trigger except block
+                    self.book = TheBook.load_from_directory(book_path)
+                    # self.book.path = book_path
+                    self.log.debug(f"Opened book: {self.book}")
+                    self.setup_book_browser()
+                # except (AttributeError, FileNotFoundError) as e:
                 except (TypeError, AttributeError, FileNotFoundError) as e:
                     self.log.error(f"Error loading book: {e}")
                     QMessageBox.critical(self, "Error", f"Could not load book: {e}")

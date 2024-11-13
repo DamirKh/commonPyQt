@@ -5,65 +5,60 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtCore import QSize, Qt, QThreadPool, pyqtSignal, QModelIndex, QDir
 
 from .book import TheBook
+from .node import TreeNode
+from .tree import Tree
+
 
 class BookModel(QStandardItemModel):
     log = logging.getLogger('BookModel')
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setHorizontalHeaderLabels(["Key", "Value"])
-        # self.test_populate_model()
-        self._root = None  # Initialize _root
+        self._tree = Tree()  # Use a Tree instance
 
-
-    def setRootPath(self, path: Path):
-        if not isinstance(path, Path):
-            path = Path(path)
+    def setRootPath(self, path: str | Path):  # Takes str or Path
+        path = Path(path) if isinstance(path, str) else path  # Ensure Path object
         if not path.exists() or not path.is_dir():
-            self.log.error(f"Invalid path: '{str(path)}' - must be an existing directory.")
-            return  # Or raise an exception
-
-        self.log.debug(f"Book root set to '{str(path)}'")
-        self._root = path
-        self.populate_model()  # Populate after setting the root
-
-
-    def populate_model(self):
-        if self._root is None:
-            self.log.warning("Root path not set. Cannot populate model.")
+            self.log.error(f"Invalid path: '{path}' - must be an existing directory.")
             return
 
-        self.clear()  # Clear existing items
+        self.log.debug(f"Book root set to '{path}'")
+        if not self._tree.load_from_directory(str(path)):  # Attempt load, create if fails
+            self.create_new_book(str(path))
+        self.populate_model()
 
-        self._populate_from_path(self.invisibleRootItem(), self._root)
+    def create_new_book(self, directory: str):
+        self._tree.create_root("TheBook", directory=directory, Title="New Book")  # Create new TheBook
+        self.log.info(f"Created new book at: {directory}")
 
-    def _populate_from_path(self, parent_item, path: Path):
-        self.log.debug(f"Populating: {path.absolute()}")
+    def populate_model(self):
+        self.clear()
+        if self._tree.root:  # Check for root before populating
+            self._populate_from_node(self.invisibleRootItem(), self._tree.root)
 
-        for entry in QDir(str(path)).entryInfoList(
-                QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot):  # Filters out "." and ".."
-            if entry.isFile() or entry.isDir():  # Explicitly check if it's a file or directory
-                item_name = entry.fileName()
-                item = QStandardItem(item_name)
-                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+    def _populate_from_node(self, parent_item, node: TreeNode):
+        self.log.debug(f"Populating from node: {node}")
 
-                if entry.isDir():
-                    book = TheBook.load(path / item_name)  # Try to load
+        for child_name, child_node in node.children.items():
+            item = QStandardItem(child_name)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
 
-                    if book:  # Check if it's a Book directory
-                        item.setData("Book", Qt.ItemDataRole.ToolTipRole)
-                        item.setIcon(
-                            QIcon("book_icon.png"))  # Set the book icon – replace with your actual icon path!
-                        # You can also add other Book details to the model here if needed:
-                        # item.appendRow(QStandardItem(f"Title: {book.title}"))
-                        # item.appendRow(QStandardItem(f"Author: {book.author}"))
-                    else:
-                        item.setData("Directory", Qt.ItemDataRole.ToolTipRole)
+            if isinstance(child_node, TheBook):
+                item.setData("Book", Qt.ItemDataRole.ToolTipRole)
+                item.setIcon(QIcon("book_icon.png"))  # Replace with your icon path
+            else:  # Generic TreeNode or other subclasses
+                item.setData(child_node.node_type(), Qt.ItemDataRole.ToolTipRole)
 
-                    self._populate_from_path(item, path / item_name)  # Recursion
-                    self.log.debug(f"Added directory: {item_name}")  # Log added directory
-                else:
-                    item.setData("File", Qt.ItemDataRole.ToolTipRole)
-                    # item.setData(entry.size(), Qt.ItemDataRole.SizeHintRole)
-                    self.log.debug(f"add item '{entry.fileName()}'")
+            self._populate_from_node(item, child_node)  # Recursion on children
+            parent_item.appendRow(item)  # Add child after recursive call
 
-                parent_item.appendRow(item)
+        for filename, is_dir in node.get_other_files_and_dirs():
+            item = QStandardItem(filename)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+            item.setData("File" if not is_dir else "Directory", Qt.ItemDataRole.ToolTipRole)
+            parent_item.appendRow(item)
+
+    def save_book(self):
+        if self._tree.root and isinstance(self._tree.root, TheBook):  # Ensure root is TheBook instance
+            self._tree.root.save_to_directory()
