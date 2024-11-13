@@ -99,8 +99,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if selected_file:
                 try:
                     book_path = Path(selected_file).parent
-                    self.book = TheBook.load_from_directory(book_path)
-                    # self.book.path = book_path
+                    book = TheBook.load_from_directory(book_path)
+                    if not book.node_type() == 'TheBook':
+                        raise TypeError(f"Incorrect Book object in file {selected_file}\nTry to select parent folder")
+                    else:
+                        self.book = book
                     self.log.debug(f"Opened book: {self.book}")
                     self.setup_book_browser()
                 # except (AttributeError, FileNotFoundError) as e:
