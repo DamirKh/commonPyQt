@@ -164,7 +164,8 @@
   </action>
   <action name="actionAbout_Qt">
    <property name="icon">
-    <iconset theme="help-about"/>
+    <iconset theme="help-about">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>About Qt</string>

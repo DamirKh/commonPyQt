@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
     QMainWindow,
 )
 
-
 from tools import get_user_data_path
 from ui.MainWindow import Ui_MainWindow
 import resources
@@ -31,11 +30,16 @@ from book_module.book import TheBook
 from book_module.book_model import BookModel
 from book_module.node import DATA_JSON as book_file_name
 import version
+
 # import PySide6
+
+BASE_DIR = Path(os.path.dirname(__file__))
+ICON_DIR = BASE_DIR / 'user_icons'
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     log = logging.getLogger('MainWindow')
+
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
@@ -47,14 +51,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionOpen_book.triggered.connect(self.open_book)
         self.actionNew_book.triggered.connect(self.new_book)
 
-
         self.actionAbout.triggered.connect(self.about)
         self.actionAbout_Qt.triggered.connect(self.about_pyqt)
 
         self.actionAdd_Node.triggered.connect(self.add_node)
+        self.actionNew_Subitem.triggered.connect(self.add_subfolder)
+
+
+    def add_subfolder(self):
+        self.log.debug(f"Hit 'New Subitem'")
+
 
     def setup_book_browser(self):  # New method to set up the file browser
-        self.book_model = BookModel()
+        self.book_model = BookModel(icons_path=ICON_DIR.absolute())
         self.book_model.setRootPath(self.book.directory)
 
         self.treeView.setModel(self.book_model)
@@ -70,7 +79,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dialog.setFileMode(QFileDialog.FileMode.Directory)  # Set to select directories
         # dialog.setOption(QFileDialog.Option.ReadOnly)  # Set ReadOnly option
         dialog.setOption(QFileDialog.Option.ShowDirsOnly)  # Show only dirs
-
 
         if dialog.exec():  # Use exec() instead of exec_() in PyQt6
             folder_path = dialog.selectedFiles()[0]  # Get the selected path

@@ -17,6 +17,7 @@ class TheBook(TreeNode):
     BackCover: str = "User can write any comments here"
     _created: datetime = field(default_factory=datetime.now)
     _last_save: datetime = field(default_factory=datetime.now)
+    _icon: str = field(default='book.png')
 
     def save_to_directory(self, directory: Optional[str] = None):
         self._last_save = datetime.now()
