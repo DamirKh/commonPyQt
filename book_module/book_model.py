@@ -37,10 +37,28 @@ class BookModel(QStandardItemModel):
         self.log.info(f"Created new book at: {directory}")
 
     def populate_model(self):
+        self.beginResetModel()
         self.clear()
         self.setHorizontalHeaderLabels(["Key", "Value"])
         if self._path:  # Check for root before populating
             self._populate_from_node(self.invisibleRootItem(), self._book_node)
+        self.endResetModel()
+
+    def _create_item(self, name, node, tooltip="", icon_path=None):
+        self.log.debug(f"Creating child node <{name}>")
+        item = QStandardItem(name)
+        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsUserCheckable)
+        tt = tooltip if tooltip else node.node_type()
+        if hasattr(node, "_icon") and self._icons_path and node._icon:
+            icon_path = self._icons_path / node._icon
+        elif icon_path:
+            pass
+        item.setIcon(QIcon(str(icon_path)) if icon_path else QIcon())
+        item.setData(tt, Qt.ItemDataRole.ToolTipRole)
+        # Store the TreeNode as data:
+        item.setData(node, Qt.ItemDataRole.UserRole)
+
+        return item
 
     def _populate_from_node(self, parent_item, node: TreeNode | Path):
         path = node if isinstance(node, Path) else node.directory
@@ -54,43 +72,28 @@ class BookModel(QStandardItemModel):
         qdir = QDir(str(path))
 
         if isinstance(node, TreeNode):
+        # if issubclass(type(node), TreeNode):
             for child_name, child_node in node.children.items():
-                item = QStandardItem(child_name)
-                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
-
-                try:
-                    icon_name = child_node._icon
-                    item.setIcon(QIcon(str(self._icons_path / icon_name)))
-                except AttributeError:
-                    pass
-                    # item.setIcon(QIcon("default_icon.png"))  # Or handle differently
-
-                self._populate_from_node(item, child_node)
+                item = self._create_item(child_name, child_node)  # node is passed here
                 parent_item.appendRow(item)
+                self._populate_from_node(item, child_node)
 
-        # Process "other" files and directories
+        # Process ONLY files and directories
         for entry in qdir.entryInfoList(QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot):
+            entry_path = path / entry.fileName()
+            if isinstance(node, TreeNode) and entry.fileName() in node.children:
+                continue  # Skip TreeNode children – they've already been added
+
             if entry.isDir():
-                entry_path = path / entry.fileName()
 
                 if (entry_path / DATA_JSON).exists():
                     try:
                         child_node = TreeNode.load_from_directory(str(entry_path))
                         if child_node:
-                            item = QStandardItem(entry.fileName())
-                            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsUserCheckable)
-
-                            try:  # try to get icon, handle exception for missing field
-                                icon_name = child_node._icon
-                                item.setIcon(QIcon(str(self._icons_path / icon_name)))
-                            except AttributeError:
-                                pass
-                                # item.setIcon(QIcon("default_icon.png"))  # Or handle differently
-
-                            item.setData(child_node.node_type(), Qt.ItemDataRole.ToolTipRole)
+                            item = self._create_item(entry.fileName(), child_node)  # node is passed here
                             self._populate_from_node(item, child_node)
                             parent_item.appendRow(item)
-                            continue  # Skip adding as regular directory
+                        continue  # Skip adding as regular directory
                     except Exception as e:
                         self.log.error(f"Error loading TreeNode from {entry_path}: {e}")
                         item = QStandardItem(entry.fileName())
@@ -100,6 +103,7 @@ class BookModel(QStandardItemModel):
                 item = QStandardItem(entry.fileName())
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
                 item.setData("Directory", Qt.ItemDataRole.ToolTipRole)
+                item.setData(entry_path, Qt.ItemDataRole.UserRole)
                 self._populate_from_node(item, entry_path)  # recurse for other files in this dir
                 parent_item.appendRow(item)
 

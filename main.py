@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 import logging
 
-from PyQt6.QtCore import QDir
+from PyQt6.QtCore import QDir, Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -60,9 +60,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_selection_changed(self, selected, deselected):
         if selected:
-            self.log.debug(f"Now selected: {selected}")
+            self.log.debug(f"  Selected: {selected}")
+            # self.log.debug(f"Type of selected node: {str(parent_node)}")
+            # self.log.debug(f"Type of selected item: {str(parent_item)}")
         if deselected:
-            self.log.debug(f"Now deselected: {deselected}")
+            self.log.debug(f"Deselected: {deselected}")
 
     def add_subfolder(self):
         self.log.debug(f"Hit 'New Subitem'")
@@ -137,18 +139,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Get the selected item (parent node)
         selected_indexes = self.treeView.selectionModel().selectedIndexes()
         if not selected_indexes:
-            self.log.warning("No item selected to add a node to.")
-            return  # Nothing selected, do nothing
-
-        parent_index = selected_indexes[0]  # Get the first selected item
-        parent_item = self.book_model.itemFromIndex(parent_index)
-        parent_node = parent_item.data()  # TreeNode is stored as data
-
-        if not isinstance(parent_node, TreeNode):
-            self.log.error("Selected item does not represent a TreeNode.")
-            self.log.info(f"Type of selected node: {str(parent_node)}")
-            self.log.info(f"Type of selected item: {str(parent_item)}")
-            return
+            self.log.info("No item selected. Add new node to root.")
+            parent_node = self.book
+        else:
+            parent_index = selected_indexes[0]  # Get the first selected item
+            parent_item = self.book_model.itemFromIndex(parent_index)
+            parent_node = parent_item.data(Qt.ItemDataRole.UserRole)  # TreeNode is stored as data
 
         # Get node name/value using QInputDialog:
         name, ok = QInputDialog.getText(self, "Add Node", "Enter node name:")
@@ -157,14 +153,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         value, ok_pressed = QInputDialog.getInt(
             self, "Get integer", "Value:", 0, 0, 100, 1)
-
         if ok_pressed:
             # print(value) # Check if value = number
             new_node = BaseIntNode(value=value)  # Initialize with 0 or a default value
+        else:
+            return # User cancelled
 
-        new_node = BaseIntNode(value=value)
 
-        parent_node.add_child(new_node, dir_name=name)  # corrected
+        if issubclass(type(parent_node), TreeNode):
+            self.log.info("Selected item represents a TreeNode subclass.")
+            try:
+                parent_node.add_child(new_node, dir_name=name)
+            except (TypeError, ValueError) as e:
+                self.log.error(f"Error adding new node: {e}")
+                QMessageBox.critical(self, "Error", f"Could not create new node: {e}")
+        else:  # Handle case where the data is a Path (regular directory)
+            try:
+                new_node_dir = parent_node / name
+                new_node.save_to_directory(new_node_dir)
+            except Exception as e:  # Catch potential saving errors
+                self.log.error(f"Error saving new node to directory: {e}")
+                QMessageBox.critical(self, "Error", str(e))
+
         self.book_model.populate_model()  # Refresh the view
 
     def open_settings_folder(self):

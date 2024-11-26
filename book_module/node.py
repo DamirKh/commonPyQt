@@ -146,7 +146,8 @@ class TreeNode(ABC):
                 return None
 
     def add_child(self, child: 'TreeNode', dir_name: Optional[str] = None):
-        if not isinstance(child, TreeNode):
+        if not issubclass(type(child), TreeNode):
+        # if not isinstance(child, TreeNode):
             raise TypeError("Child must be an instance of TreeNode")
 
         if self.directory:
