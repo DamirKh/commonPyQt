@@ -7,19 +7,29 @@ from typing import Any, Dict, Optional, List, Iterator, Mapping, Tuple
 import shutil  # For directory cleanup
 from datetime import datetime
 
+import logging
+log = logging.getLogger(__name__)
+
 NODE_TYPE = "node_type"
 DATA_JSON = "node_data.json"
 
 
 # Helper function to handle datetime serialization
+# def serialize_value(value):
+#     if isinstance(value, datetime):
+#         return value.isoformat()
+#     elif isinstance(value, dict):  # handle dictionaries, to prevent recursive serialization for dataclass
+#         return value
+#     elif is_dataclass(value):
+#         return value.to_dict()
+#     return value
+
 def serialize_value(value):
     if isinstance(value, datetime):
         return value.isoformat()
-    elif isinstance(value, dict):  # handle dictionaries, to prevent recursive serialization for dataclass
-        return value
-    elif is_dataclass(value):
-        return value.to_dict()
-    return value
+    elif is_dataclass(value):  # Check for dataclass before dict
+        return value.to_dict()  # Recursive serialization handled in to_dict
+    return value  # No special handling for dicts needed
 
 
 def deserialize_value(value):
@@ -183,6 +193,7 @@ class TreeNode(ABC):
 class BaseIntNode(TreeNode):
     """This class is mainly for run tests"""
     value: int  # Or any other data type you need
+    _icon: str = field(default='edit-number.png')
 
     @property
     def valid(self) -> bool:

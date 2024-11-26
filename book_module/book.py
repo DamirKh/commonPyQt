@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import datetime
 from .node import TreeNode
-
+# log = logging.getLogger(__name__)  # Use __name__ for more informative logging
 
 @TreeNode.register_node_type('TheBook')
 @dataclass(kw_only=True)

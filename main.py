@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QDialog,
-    QMainWindow,
+    QMainWindow, QInputDialog,
 )
 
 from tools import get_user_data_path
@@ -28,7 +28,8 @@ from ui.MainWindow import Ui_MainWindow
 import resources
 from book_module.book import TheBook
 from book_module.book_model import BookModel
-from book_module.node import DATA_JSON as book_file_name
+from book_module.node import DATA_JSON as book_file_name, TreeNode
+from book_module.node import BaseIntNode
 import version
 
 # import PySide6
@@ -57,6 +58,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionAdd_Node.triggered.connect(self.add_node)
         self.actionNew_Subitem.triggered.connect(self.add_subfolder)
 
+    def on_selection_changed(self, selected, deselected):
+        if selected:
+            self.log.debug(f"Now selected: {selected}")
+        if deselected:
+            self.log.debug(f"Now deselected: {deselected}")
 
     def add_subfolder(self):
         self.log.debug(f"Hit 'New Subitem'")
@@ -67,6 +73,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.book_model.setRootPath(self.book.directory)
 
         self.treeView.setModel(self.book_model)
+        self.selection_model = self.treeView.selectionModel()
+        self.selection_model.selectionChanged.connect(self.on_selection_changed)
+
         self.actionAdd_Item.setEnabled(True)
         self.actionNew_Subitem.setEnabled(True)
         self.actionAdd_Node.setEnabled(True)
@@ -125,7 +134,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def add_node(self):
         self.log.debug(f"Hit 'Add Node'")
-        # self.book_model.
+        # Get the selected item (parent node)
+        selected_indexes = self.treeView.selectionModel().selectedIndexes()
+        if not selected_indexes:
+            self.log.warning("No item selected to add a node to.")
+            return  # Nothing selected, do nothing
+
+        parent_index = selected_indexes[0]  # Get the first selected item
+        parent_item = self.book_model.itemFromIndex(parent_index)
+        parent_node = parent_item.data()  # TreeNode is stored as data
+
+        if not isinstance(parent_node, TreeNode):
+            self.log.error("Selected item does not represent a TreeNode.")
+            self.log.info(f"Type of selected node: {str(parent_node)}")
+            self.log.info(f"Type of selected item: {str(parent_item)}")
+            return
+
+        # Get node name/value using QInputDialog:
+        name, ok = QInputDialog.getText(self, "Add Node", "Enter node name:")
+        if not ok or not name:
+            return  # User cancelled or entered empty name
+
+        value, ok_pressed = QInputDialog.getInt(
+            self, "Get integer", "Value:", 0, 0, 100, 1)
+
+        if ok_pressed:
+            # print(value) # Check if value = number
+            new_node = BaseIntNode(value=value)  # Initialize with 0 or a default value
+
+        new_node = BaseIntNode(value=value)
+
+        parent_node.add_child(new_node, dir_name=name)  # corrected
+        self.book_model.populate_model()  # Refresh the view
 
     def open_settings_folder(self):
         directory_path: Path = get_user_data_path()

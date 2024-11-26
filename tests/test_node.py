@@ -146,7 +146,7 @@ class TestTreeNode(unittest.TestCase):
 
     def test_to_dict(self):
         node = BaseIntNode(value=15, directory=self.temp_dir / "node_to_dict", required_children={})
-        expected_dict = {"node_type": "BaseIntNode", "required_children": {}, "value": 15}  # include required_children
+        expected_dict = {'_icon': 'edit-number.png', "node_type": "BaseIntNode", "required_children": {}, "value": 15}  # include required_children
         self.assertEqual(node.to_dict(), expected_dict)
 
 
