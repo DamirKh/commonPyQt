@@ -134,7 +134,7 @@ class TreeNode(ABC):
                 with open(filepath, "r") as f:
                     data = json.load(f)
             except json.JSONDecodeError as e:  # Catch JSON decoding errors
-                # log.error(f"Error decoding JSON in {filepath}: {e}")
+                log.error(f"Error decoding JSON in {filepath}: {e}")
                 return None  # Or handle the error differently
 
             try:  # Separate try-except for TreeNode creation
@@ -142,7 +142,7 @@ class TreeNode(ABC):
                 node.directory = Path(directory)
                 return node
             except Exception as e:  # can catch other exceptions from_dict can produce
-                # log.error(f"Error creating TreeNode from data in {filepath}: {e}")  # more detailed error report
+                log.error(f"Error creating TreeNode from data in {filepath}: {e}")  # more detailed error report
                 return None
 
     def add_child(self, child: 'TreeNode', dir_name: Optional[str] = None):

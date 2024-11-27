@@ -4,7 +4,8 @@ import subprocess
 from pathlib import Path
 import logging
 
-from PyQt6.QtCore import QDir, Qt
+from PyQt6.QtCore import QDir, Qt, QModelIndex
+from PyQt6.QtGui import QStandardItem, QIcon
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -67,8 +68,43 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.log.debug(f"Deselected: {deselected}")
 
     def add_subfolder(self):
-        self.log.debug(f"Hit 'New Subitem'")
+        self.log.debug("Hit 'New Subitem'")
 
+        selected_indexes = self.treeView.selectionModel().selectedIndexes()
+        if not selected_indexes:
+            self.log.info("No item selected. Adding new subfolder to root.")
+            parent_node = self.book
+            parent_path = self.book.directory  # Use book's directory as parent path
+        else:
+            parent_index = selected_indexes[0]
+            parent_item = self.book_model.itemFromIndex(parent_index)
+            parent_node = parent_item.data(Qt.ItemDataRole.UserRole)
+            parent_path = parent_node if isinstance(parent_node, Path) else parent_node.directory
+
+        if parent_path is None:  # Check if the parent path is valid.
+            self.log.error("Parent path is None. Cannot add subfolder.")
+            QMessageBox.critical(self, "Error", "Cannot add subfolder: Parent path is invalid.")
+            return
+
+        name, ok = QInputDialog.getText(self, "New Subfolder", "Enter subfolder name:")
+        if ok and name:
+            new_folder_path = parent_path / name
+            try:
+                new_folder_path.mkdir(exist_ok=False)  # exist_ok should be False to catch duplication
+                self.log.info(f"Created subfolder: {new_folder_path}")
+
+                # if isinstance(parent_node, TreeNode):  # save ordering for TreeNode objects
+                #     parent_node.save_directory_info()
+                # else:  # Save ordering for Path objects
+                #     save_directory_info(parent_path)
+
+                self.book_model.populate_model()  # update view
+            except FileExistsError:
+                QMessageBox.warning(self, "Error", f"Folder '{name}' already exists.")
+            except OSError as e:  # catch file system errors
+                QMessageBox.critical(self, "Error", f"Could not create folder: {e}")
+        else:
+            self.log.debug("New subfolder canceled.")
 
     def setup_book_browser(self):  # New method to set up the file browser
         self.book_model = BookModel(icons_path=ICON_DIR.absolute())
@@ -78,10 +114,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.selection_model = self.treeView.selectionModel()
         self.selection_model.selectionChanged.connect(self.on_selection_changed)
 
+        self.treeView.expanded.connect(self.on_item_expanded)
+        self.treeView.collapsed.connect(self.on_item_collapsed)
+
         self.actionAdd_Item.setEnabled(True)
         self.actionNew_Subitem.setEnabled(True)
         self.actionAdd_Node.setEnabled(True)
-        # self.treeView.setRootIndex(self.book.path)
+
+    def on_item_expanded(self, index: QModelIndex):
+        item = self.book_model.itemFromIndex(index)
+        self.update_item_icon(item, expanded=True)
+
+    def on_item_collapsed(self, index: QModelIndex):
+        item = self.book_model.itemFromIndex(index)
+        self.update_item_icon(item, expanded=False)
+
+    def update_item_icon(self, item: QStandardItem, expanded: bool):
+        if item is None:  # Check for valid item
+            return
+
+        node_or_path = item.data(Qt.ItemDataRole.UserRole)
+        if isinstance(node_or_path, Path) and node_or_path.is_dir(): # Check if dir
+            icon_name = "folder-horizontal-open.png" if expanded else "folder-horizontal.png"  # Use your desired names
+            icon_path = self.book_model._icons_path / icon_name
+            if icon_path.exists(): # Check if icon file exists
+                item.setIcon(QIcon(str(icon_path)))
 
     def new_book(self):
         self.log.debug(f"Hit 'New book'")
@@ -141,15 +198,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not selected_indexes:
             self.log.info("No item selected. Add new node to root.")
             parent_node = self.book
+            parent_path = self.book.directory
+            parent_item = self.book_model.invisibleRootItem()
         else:
             parent_index = selected_indexes[0]  # Get the first selected item
             parent_item = self.book_model.itemFromIndex(parent_index)
-            parent_node = parent_item.data(Qt.ItemDataRole.UserRole)  # TreeNode is stored as data
+            parent_node = parent_item.data(Qt.ItemDataRole.UserRole)  # TreeNode or Path was stored as data
+            parent_path = parent_node if isinstance(parent_node, Path) else parent_node.directory
 
         # Get node name/value using QInputDialog:
         name, ok = QInputDialog.getText(self, "Add Node", "Enter node name:")
         if not ok or not name:
             return  # User cancelled or entered empty name
+        # here we shoud check if entered name already exist
+
+        if (parent_path / name).exists(): # Check for already existing file or directory with the same name
+            QMessageBox.warning(self, "Error", f"Item with name '{name}' already exists in this directory.")
+            return
 
         value, ok_pressed = QInputDialog.getInt(
             self, "Get integer", "Value:", 0, 0, 100, 1)
@@ -167,6 +232,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             except (TypeError, ValueError) as e:
                 self.log.error(f"Error adding new node: {e}")
                 QMessageBox.critical(self, "Error", f"Could not create new node: {e}")
+                return
         else:  # Handle case where the data is a Path (regular directory)
             try:
                 new_node_dir = parent_node / name
@@ -174,8 +240,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             except Exception as e:  # Catch potential saving errors
                 self.log.error(f"Error saving new node to directory: {e}")
                 QMessageBox.critical(self, "Error", str(e))
-
-        self.book_model.populate_model()  # Refresh the view
+                return
+        self.book_model._populate_from_node(parent_item, new_node)
+        # self.book_model.populate_model()  # Refresh the view
 
     def open_settings_folder(self):
         directory_path: Path = get_user_data_path()
